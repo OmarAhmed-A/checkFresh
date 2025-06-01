@@ -1,75 +1,141 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, StatusBar, Text } from 'react-native';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import CameraComponent from '@/components/CameraComponent';
+import PredictionResultComponent from '@/components/PredictionResultComponent';
+import { modelService, PredictionResult } from '@/utils/modelUtils';
+import { imageProcessor } from '@/utils/imageUtils';
+
+type AppState = 'loading' | 'camera' | 'predicting' | 'result';
 
 export default function HomeScreen() {
+  const [appState, setAppState] = useState<AppState>('loading');
+  const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    initializeApp();
+  }, []);
+
+  const initializeApp = async () => {
+    try {
+      // Initialize TensorFlow.js
+      await tf.ready();
+      console.log('TensorFlow.js initialized');
+      
+      // Load the model
+      await modelService.loadModel();
+      console.log('Model loaded successfully');
+      
+      setAppState('camera');
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
+      Alert.alert(
+        'Initialization Error',
+        'Failed to load the AI model. Please restart the app.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handlePhotoTaken = async (imageUri: string) => {
+    setCapturedImage(imageUri);
+    setAppState('predicting');
+
+    try {
+      // Use the actual model for prediction
+      const result = await modelService.predict(imageUri);
+      setPredictionResult(result);
+      setAppState('result');
+    } catch (error) {
+      console.error('Prediction failed:', error);
+      Alert.alert(
+        'Prediction Error',
+        'Failed to analyze the image. Please try again.',
+        [{ text: 'OK', onPress: () => setAppState('camera') }]
+      );
+    }
+  };
+
+  const handleTakeAnother = () => {
+    setPredictionResult(null);
+    setCapturedImage(null);
+    setAppState('camera');
+  };
+
+  const renderContent = () => {
+    switch (appState) {
+      case 'loading':
+        return (
+          <View style={styles.loadingContainer}>
+            <View style={styles.loadingContent}>
+              <Text style={styles.loadingTitle}>CheckFresh AI</Text>
+              <Text style={styles.loadingSubtitle}>Loading AI Model...</Text>
+              <Text style={styles.loadingDots}>●●●</Text>
+            </View>
+          </View>
+        );
+
+      case 'camera':
+      case 'predicting':
+        return (
+          <CameraComponent
+            onPhotoTaken={handlePhotoTaken}
+            isLoading={appState === 'predicting'}
+          />
+        );
+
+      case 'result':
+        return predictionResult && capturedImage ? (
+          <PredictionResultComponent
+            result={predictionResult}
+            imageUri={capturedImage}
+            onTakeAnother={handleTakeAnother}
+          />
+        ) : null;
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      {renderContent()}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#000',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  loadingContent: {
+    alignItems: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  loadingTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    marginBottom: 10,
+  },
+  loadingSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 20,
+  },
+  loadingDots: {
+    fontSize: 24,
+    color: '#4CAF50',
   },
 });
