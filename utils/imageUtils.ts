@@ -68,14 +68,13 @@ export class ImageProcessor {
             return;
           }
           
-          ctx.drawImage(img, 0, 0, 240, 240);
-          
-          const imageData = ctx.getImageData(0, 0, 240, 240);
+          ctx.drawImage(img, 0, 0, 240, 240);          const imageData = ctx.getImageData(0, 0, 240, 240);
           const tensor = tf.tidy(() => {
             const imageTensor = tf.browser.fromPixels(imageData, 3);
-            const resized = tf.cast(imageTensor, 'float32');
-            const normalized = tf.div(resized, 255.0);
-            return tf.expandDims(normalized, 0);
+            // EfficientNetV2B1 with include_preprocessing=True expects [0, 255] range
+            // browser.fromPixels already gives us [0, 255], so just cast to float32
+            const float32Tensor = tf.cast(imageTensor, 'float32');
+            return tf.expandDims(float32Tensor, 0);
           });
           
           resolve(tensor);
@@ -93,50 +92,30 @@ export class ImageProcessor {
   }  /**
    * Mobile-specific image to tensor conversion
    * Uses TensorFlow.js React Native's decodeJpeg function
-   */
-  private async imageToTensorMobile(imageUri: string): Promise<tf.Tensor> {
+   */  private async imageToTensorMobile(imageUri: string): Promise<tf.Tensor> {
     try {
       console.log('Processing image for mobile:', imageUri);
       
-      // Fetch the image data as Uint8Array
-      const response = await fetch(imageUri, {}, { isBinary: true });
-      const imageDataArrayBuffer = await response.arrayBuffer();
-      const imageData = new Uint8Array(imageDataArrayBuffer);
-
-      // Decode JPEG to tensor using TensorFlow.js React Native
-      const imageTensor = decodeJpeg(imageData, 3); // 3 channels for RGB
+      // First, let's try the expo-image-manipulator approach directly
+      // as it's more reliable than decodeJpeg for local files
+      return await this.imageToTensorFromManipulator(imageUri);
       
-      // Resize to 240x240 and normalize to [0, 1]
-      const tensor = tf.tidy(() => {
-        const resized = tf.image.resizeBilinear(imageTensor, [240, 240]);
-        const normalized = tf.div(tf.cast(resized, 'float32'), 255.0);
-        return tf.expandDims(normalized, 0); // Add batch dimension
-      });
-
-      // Clean up intermediate tensor
-      imageTensor.dispose();
-      
-      return tensor;
     } catch (error) {
       console.error('Mobile image to tensor conversion failed:', error);
-      console.log('Attempting fallback method...');
+      console.log('Creating fallback tensor...');
       
-      try {
-        // Fallback: Use expo-image-manipulator approach
-        return await this.imageToTensorFromManipulator(imageUri);
-      } catch (fallbackError) {
-        console.error('Fallback method also failed:', fallbackError);
-        // Final fallback: return a dummy tensor with correct shape
-        return tf.randomUniform([1, 240, 240, 3], 0, 1);
-      }
+      // Final fallback: return a dummy tensor with correct shape
+      console.warn('Using random tensor - predictions will be unreliable');
+      return tf.randomUniform([1, 240, 240, 3], 0, 1);
     }
-  }
-  /**
-   * Alternative implementation using expo-image-manipulator
-   * Used as fallback when decodeJpeg fails
+  }  /**
+   * Alternative implementation using expo-image-manipulator and FileSystem
+   * More reliable for React Native environments
    */
   private async imageToTensorFromManipulator(imageUri: string): Promise<tf.Tensor> {
     try {
+      console.log('Using manipulator method for image processing...');
+      
       // First ensure the image is properly sized
       const manipResult = await manipulateAsync(
         imageUri,
@@ -147,25 +126,55 @@ export class ImageProcessor {
         }
       );
 
-      // Try to fetch the processed image and decode it
-      const response = await fetch(manipResult.uri, {}, { isBinary: true });
-      const imageDataArrayBuffer = await response.arrayBuffer();
-      const imageData = new Uint8Array(imageDataArrayBuffer);
+      console.log('Image resized successfully:', manipResult.uri);
 
-      // Use decodeJpeg on the processed image
-      const imageTensor = decodeJpeg(imageData, 3);
+      // For React Native, try a simpler approach using FileSystem
+      const base64Data = await FileSystem.readAsStringAsync(manipResult.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });      console.log('Got base64 data, length:', base64Data.length);
+
+      // Try a simpler approach - use the expo manipulator to get base64 directly
+      const manipResultWithBase64 = await manipulateAsync(
+        imageUri,
+        [{ resize: { width: 240, height: 240 } }],
+        { 
+          compress: 1, 
+          format: SaveFormat.JPEG,
+          base64: true
+        }
+      );
+
+      if (!manipResultWithBase64.base64) {
+        throw new Error('Failed to get base64 from manipulator');
+      }
+
+      console.log('Got base64 from manipulator, length:', manipResultWithBase64.base64.length);
+
+      // Convert base64 to Uint8Array more safely
+      const binaryString = atob(manipResultWithBase64.base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      console.log('Converted to bytes, length:', bytes.length, 'attempting decodeJpeg...');// Try decodeJpeg with the processed bytes
+      const imageTensor = decodeJpeg(bytes, 3);
+      console.log('DecodeJpeg successful, tensor shape:', imageTensor.shape);
       
       const tensor = tf.tidy(() => {
-        const normalized = tf.div(tf.cast(imageTensor, 'float32'), 255.0);
-        return tf.expandDims(normalized, 0);
+        // EfficientNetV2B1 with include_preprocessing=True expects [0, 255] range
+        // So we keep the raw pixel values and just cast to float32
+        const float32Tensor = tf.cast(imageTensor, 'float32');
+        return tf.expandDims(float32Tensor, 0);
       });
 
       imageTensor.dispose();
+      console.log('Final tensor shape:', tensor.shape);
       return tensor;
+      
     } catch (error) {
       console.error('Image manipulator tensor conversion failed:', error);
-      // Create a normalized random tensor as final fallback
-      return tf.randomUniform([1, 240, 240, 3], 0, 1);
+      throw error;
     }
   }
 
