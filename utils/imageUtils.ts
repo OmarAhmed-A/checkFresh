@@ -13,13 +13,13 @@ export class ImageProcessor {
   
   /**
    * Preprocesses an image for model prediction
-   * Resizes to 224x224 and normalizes pixel values to [0,1]
+   * Resizes to 240x240 and normalizes pixel values to [0,1]
    */  async preprocessImage(imageUri: string): Promise<ImageProcessingResult> {
     try {
-      // Resize image to 224x224 using the new manipulateAsync function
+      // Resize image to 240x240 using the new manipulateAsync function
       const resizedImage = await manipulateAsync(
         imageUri,
-        [{ resize: { width: 224, height: 224 } }],
+        [{ resize: { width: 240, height: 240 } }],
         { compress: 1, format: SaveFormat.JPEG }
       );
 
@@ -59,8 +59,8 @@ export class ImageProcessor {
         
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          canvas.width = 224;
-          canvas.height = 224;
+          canvas.width = 240;
+          canvas.height = 240;
           const ctx = canvas.getContext('2d');
           
           if (!ctx) {
@@ -68,9 +68,9 @@ export class ImageProcessor {
             return;
           }
           
-          ctx.drawImage(img, 0, 0, 224, 224);
+          ctx.drawImage(img, 0, 0, 240, 240);
           
-          const imageData = ctx.getImageData(0, 0, 224, 224);
+          const imageData = ctx.getImageData(0, 0, 240, 240);
           const tensor = tf.tidy(() => {
             const imageTensor = tf.browser.fromPixels(imageData, 3);
             const resized = tf.cast(imageTensor, 'float32');
@@ -106,9 +106,9 @@ export class ImageProcessor {
       // Decode JPEG to tensor using TensorFlow.js React Native
       const imageTensor = decodeJpeg(imageData, 3); // 3 channels for RGB
       
-      // Resize to 224x224 and normalize to [0, 1]
+      // Resize to 240x240 and normalize to [0, 1]
       const tensor = tf.tidy(() => {
-        const resized = tf.image.resizeBilinear(imageTensor, [224, 224]);
+        const resized = tf.image.resizeBilinear(imageTensor, [240, 240]);
         const normalized = tf.div(tf.cast(resized, 'float32'), 255.0);
         return tf.expandDims(normalized, 0); // Add batch dimension
       });
@@ -127,7 +127,7 @@ export class ImageProcessor {
       } catch (fallbackError) {
         console.error('Fallback method also failed:', fallbackError);
         // Final fallback: return a dummy tensor with correct shape
-        return tf.randomUniform([1, 224, 224, 3], 0, 1);
+        return tf.randomUniform([1, 240, 240, 3], 0, 1);
       }
     }
   }
@@ -140,7 +140,7 @@ export class ImageProcessor {
       // First ensure the image is properly sized
       const manipResult = await manipulateAsync(
         imageUri,
-        [{ resize: { width: 224, height: 224 } }],
+        [{ resize: { width: 240, height: 240 } }],
         { 
           compress: 1, 
           format: SaveFormat.JPEG
@@ -165,7 +165,7 @@ export class ImageProcessor {
     } catch (error) {
       console.error('Image manipulator tensor conversion failed:', error);
       // Create a normalized random tensor as final fallback
-      return tf.randomUniform([1, 224, 224, 3], 0, 1);
+      return tf.randomUniform([1, 240, 240, 3], 0, 1);
     }
   }
 

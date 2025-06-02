@@ -148,13 +148,13 @@ export class ModelService {
     // Create a simple mock model for testing when the real model fails to load
     const model = tf.sequential({
       layers: [
-        tf.layers.flatten({ inputShape: [224, 224, 3] }),
+        tf.layers.flatten({ inputShape: [240, 240, 3] }),
         tf.layers.dense({ units: 128, activation: 'relu' }),
         tf.layers.dense({ units: 6, activation: 'softmax' }) // 6 classes
       ]
     });
     
-    console.log('Mock model created with input shape: [null, 224, 224, 3]');
+    console.log('Mock model created with input shape: [null, 240, 240, 3]');
     return model;
   }
 

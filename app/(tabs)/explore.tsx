@@ -70,7 +70,7 @@ export default function TabTwoScreen() {
             • <ThemedText type="defaultSemiBold">Architecture:</ThemedText> VGG16 + Transfer Learning
           </ThemedText>
           <ThemedText>
-            • <ThemedText type="defaultSemiBold">Input Size:</ThemedText> 224x224 pixels
+            • <ThemedText type="defaultSemiBold">Input Size:</ThemedText> 240x240 pixels
           </ThemedText>
           <ThemedText>
             • <ThemedText type="defaultSemiBold">Classes:</ThemedText> 6 (3 fruits × 2 states)
