@@ -2,7 +2,12 @@ import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
 import { Platform } from 'react-native';
 import { imageProcessor } from './imageUtils';
-import { bundleResourceIO } from '@tensorflow/tfjs-react-native';
+import { bundleResourceIO, decodeJpeg } from '@tensorflow/tfjs-react-native';
+import * as FileSystem from 'expo-file-system';
+
+// Import the model files
+const modelJSON = require('../assets/model/model.json');
+const modelWeights = require('../assets/model/group1-shard1of1.bin');
 
 // Initialize TensorFlow.js platform for React Native
 if (Platform.OS !== 'web') {
@@ -30,7 +35,6 @@ export class ModelService {
     'rottenbanana',
     'rottenoranges'
   ];
-
   async loadModel(): Promise<void> {
     if (this.model || this.isLoading) return;
     
@@ -48,45 +52,34 @@ export class ModelService {
         console.log('Loading model from web path:', modelUrl);
         this.model = await tf.loadLayersModel(modelUrl);
       } else {
-        // For mobile platforms, use bundleResourceIO
+        // For mobile platforms, use bundleResourceIO with single bin file
         try {
           console.log('Loading model using bundleResourceIO for mobile...');
+          console.log('Model JSON loaded:', !!modelJSON);
+          console.log('Model weights loaded:', !!modelWeights);
           
-          // Import the model JSON and weights
-          const modelJson = require('../assets/model/model.json');
+          // Load the model using bundleResourceIO
+          this.model = await tf.loadLayersModel(
+            bundleResourceIO(modelJSON, modelWeights)
+          ).catch((e) => {
+            console.log("[LOADING ERROR] info:", e);
+            throw e;
+          });
           
-          // Import all weight shards
-          const weightShards = [
-            require('../assets/model/group1-shard1of15.bin'),
-            require('../assets/model/group1-shard2of15.bin'),
-            require('../assets/model/group1-shard3of15.bin'),
-            require('../assets/model/group1-shard4of15.bin'),
-            require('../assets/model/group1-shard5of15.bin'),
-            require('../assets/model/group1-shard6of15.bin'),
-            require('../assets/model/group1-shard7of15.bin'),
-            require('../assets/model/group1-shard8of15.bin'),
-            require('../assets/model/group1-shard9of15.bin'),
-            require('../assets/model/group1-shard10of15.bin'),
-            require('../assets/model/group1-shard11of15.bin'),
-            require('../assets/model/group1-shard12of15.bin'),
-            require('../assets/model/group1-shard13of15.bin'),
-            require('../assets/model/group1-shard14of15.bin'),
-            require('../assets/model/group1-shard15of15.bin'),
-          ];
-          
-          console.log('Model JSON loaded:', !!modelJson);
-          console.log('Weight shards loaded:', weightShards.length);
-          
-          this.model = await tf.loadLayersModel(bundleResourceIO(modelJson, weightShards));
           console.log('Model loaded successfully using bundleResourceIO');
         } catch (bundleError) {
           console.error('Bundle resource loading failed:', bundleError);
           
           // Fallback: try HTTP loading for development
-          const modelUrl = 'http://localhost:8081/assets/model/model.json';
-          console.log('Trying fallback HTTP loading:', modelUrl);
-          this.model = await tf.loadLayersModel(modelUrl);
-          console.log('Model loaded with HTTP fallback');
+          try {
+            const modelUrl = 'http://localhost:8081/assets/model/model.json';
+            console.log('Trying fallback HTTP loading:', modelUrl);
+            this.model = await tf.loadLayersModel(modelUrl);
+            console.log('Model loaded with HTTP fallback');
+          } catch (httpError) {
+            console.error('HTTP loading also failed:', httpError);
+            throw httpError;
+          }
         }
       }
       
@@ -142,9 +135,7 @@ export class ModelService {
         confidence: 0.85,
         isFresh: true,
         fruitType: 'apple'      };    }
-  }
-
-  private async createMockModel(): Promise<tf.LayersModel> {
+  }  private async createMockModel(): Promise<tf.LayersModel> {
     // Create a simple mock model for testing when the real model fails to load
     const model = tf.sequential({
       layers: [
