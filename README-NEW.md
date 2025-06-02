@@ -4,7 +4,7 @@ A React Native mobile application powered by TensorFlow.js that uses AI to deter
 
 ## 🚀 Features
 
-- **AI-Powered Detection**: Uses a VGG16-based neural network with 96.8% accuracy
+- **AI-Powered Detection**: Uses EfficientNetV2B1 neural network with 97% accuracy
 - **Real-time Camera**: Take photos directly within the app
 - **Instant Results**: Get immediate freshness predictions with confidence scores
 - **Offline Capability**: Runs completely locally without internet connection
@@ -26,10 +26,20 @@ A React Native mobile application powered by TensorFlow.js that uses AI to deter
 ## 🏗️ Architecture
 
 ### Model Details
-- **Base Architecture**: VGG16 Transfer Learning
-- **Input Size**: 224x224x3 RGB images
+- **Base Architecture**: EfficientNetV2B1 with Transfer Learning
+- **Input Size**: 240×240×3 RGB images
 - **Output Classes**: 6 (freshapples, freshbanana, freshoranges, rottenapples, rottenbanana, rottenoranges)
-- **Accuracy**: 96.8% on validation set
+- **Accuracy**: 97% on validation set
+- **Training Data**: 13,599 total images (10,901 training + 2,698 validation)
+- **Data Augmentation**: Random flip, rotation, zoom, translation, and contrast adjustment
+
+### Training Dataset Breakdown
+- **Fresh Apples**: 1,693 images
+- **Fresh Bananas**: 1,581 images  
+- **Fresh Oranges**: 1,466 images
+- **Rotten Apples**: 2,342 images
+- **Rotten Bananas**: 2,224 images
+- **Rotten Oranges**: 1,595 images
 
 ### App Structure
 ```

@@ -112,7 +112,7 @@ export default function PredictionResultComponent({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0a0a0a',
     padding: 20,
   },
   header: {
@@ -123,19 +123,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ECEDEE',
   },
   imageContainer: {
     alignItems: 'center',
     marginBottom: 30,
     position: 'relative',
-  },
-  image: {
+  },  image: {
     width: 200,
     height: 200,
     borderRadius: 12,
     borderWidth: 3,
-    borderColor: '#ddd',
+    borderColor: '#333',
   },
   badge: {
     position: 'absolute',
@@ -157,16 +156,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 4,
     fontSize: 12,
-  },
-  resultsContainer: {
-    backgroundColor: 'white',
+  },  resultsContainer: {
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 20,
     marginBottom: 30,
     elevation: 2,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 3.84,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   fruitInfo: {
     flexDirection: 'row',
@@ -177,24 +177,22 @@ const styles = StyleSheet.create({
   fruitEmoji: {
     fontSize: 32,
     marginRight: 12,
-  },
-  fruitType: {
+  },  fruitType: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  confidenceContainer: {
+    color: '#ECEDEE',
+  },  confidenceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#333',
   },
   confidenceLabel: {
     fontSize: 16,
-    color: '#666',
+    color: '#9BA1A6',
   },
   confidenceValue: {
     fontSize: 18,
@@ -204,10 +202,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  statusLabel: {
+  },  statusLabel: {
     fontSize: 16,
-    color: '#666',
+    color: '#9BA1A6',
   },
   statusValue: {
     fontSize: 16,
@@ -215,9 +212,8 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     alignItems: 'center',
-  },
-  takeAnotherButton: {
-    backgroundColor: '#007AFF',
+  },  takeAnotherButton: {
+    backgroundColor: '#4CAF50',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,

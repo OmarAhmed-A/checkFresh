@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface CameraComponentProps {
@@ -11,7 +12,26 @@ interface CameraComponentProps {
 export default function CameraComponent({ onPhotoTaken, isLoading = false }: CameraComponentProps) {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+
+  // Reset camera state when component becomes focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsCameraReady(false);
+      // Small delay to ensure camera is properly initialized
+      const timer = setTimeout(() => {
+        setIsCameraReady(true);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }, [])
+  );
+
+  useEffect(() => {
+    // Additional camera initialization on mount
+    setIsCameraReady(true);
+  }, []);
 
   if (!permission) {
     // Camera permissions are still loading
@@ -33,9 +53,8 @@ export default function CameraComponent({ onPhotoTaken, isLoading = false }: Cam
       </View>
     );
   }
-
   const takePicture = async () => {
-    if (cameraRef.current && !isLoading) {
+    if (cameraRef.current && !isLoading && isCameraReady) {
       try {
         const photo = await cameraRef.current.takePictureAsync({
           quality: 1,
@@ -54,52 +73,57 @@ export default function CameraComponent({ onPhotoTaken, isLoading = false }: Cam
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
-  };
-
-  return (
+  };  return (
     <View style={styles.container}>
-      <CameraView 
-        style={styles.camera} 
-        facing={facing}
-        ref={cameraRef}
-      >
-        <View style={styles.overlay}>
-          {/* Camera controls */}
-          <View style={styles.topControls}>
-            <TouchableOpacity 
-              style={styles.controlButton} 
-              onPress={toggleCameraFacing}
-              disabled={isLoading}
-            >
-              <Ionicons name="camera-reverse" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Instructions */}
-          <View style={styles.instructionsContainer}>
-            <Text style={styles.instructions}>
-              Point camera at a fruit and tap capture
-            </Text>
-          </View>
-
-          {/* Capture button */}
-          <View style={styles.bottomControls}>
-            <TouchableOpacity
-              style={[styles.captureButton, isLoading && styles.captureButtonDisabled]}
-              onPress={takePicture}
-              disabled={isLoading}
-            >
-              <View style={[styles.captureButtonInner, isLoading && styles.captureButtonInnerDisabled]}>
-                {isLoading ? (
-                  <Text style={styles.loadingText}>...</Text>
-                ) : (
-                  <Ionicons name="camera" size={32} color="white" />
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
+      {isCameraReady ? (
+        <CameraView 
+          style={styles.camera} 
+          facing={facing}
+          ref={cameraRef}
+        />
+      ) : (
+        <View style={styles.cameraLoading}>
+          <Text style={styles.cameraLoadingText}>Initializing Camera...</Text>
         </View>
-      </CameraView>
+      )}
+      
+      {/* Overlay positioned absolutely outside CameraView */}
+      <View style={styles.overlay}>
+        {/* Camera controls */}
+        <View style={styles.topControls}>
+          <TouchableOpacity 
+            style={styles.controlButton} 
+            onPress={toggleCameraFacing}
+            disabled={isLoading}
+          >
+            <Ionicons name="camera-reverse" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Instructions */}
+        <View style={styles.instructionsContainer}>
+          <Text style={styles.instructions}>
+            Point camera at a fruit and tap capture
+          </Text>
+        </View>
+
+        {/* Capture button */}
+        <View style={styles.bottomControls}>
+          <TouchableOpacity
+            style={[styles.captureButton, isLoading && styles.captureButtonDisabled]}
+            onPress={takePicture}
+            disabled={isLoading}
+          >
+            <View style={[styles.captureButtonInner, isLoading && styles.captureButtonInnerDisabled]}>
+              {isLoading ? (
+                <Text style={styles.loadingText}>...</Text>
+              ) : (
+                <Ionicons name="camera" size={32} color="white" />
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -114,11 +138,11 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
     width: '100%',
-  },
-  overlay: {
-    flex: 1,
+  },  overlay: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
     justifyContent: 'space-between',
+    pointerEvents: 'box-none',
   },
   topControls: {
     flexDirection: 'row',
@@ -182,10 +206,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  loadingText: {
+  },  loadingText: {
     color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  cameraLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  cameraLoadingText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
