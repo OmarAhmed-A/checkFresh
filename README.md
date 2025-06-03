@@ -21,6 +21,40 @@ A cutting-edge React Native mobile application that leverages **EfficientNetV2B1
 - 📊 **Confidence Scores**: Detailed prediction confidence
 - 🎨 **Modern UI**: Beautiful, intuitive interface
 
+
+## 🙏 Acknowledgments
+
+- **Dr. Mohamed Waleed Fakhr** [LinkedIn](https://www.linkedin.com/in/mohamed-waleed-fakhr-2b952036/) for his invaluable guidance and supervision as the course lecturer
+- **Eng. Rokaya Eltehewy** [LinkedIn](https://www.linkedin.com/in/rokayaeltehewy/) for her dedicated supervision and technical support throughout the project
+- **TensorFlow.js Team** [GitHub](https://github.com/tensorflow/tfjs) for the ML framework
+- **EfficientNet Authors** [Paper](https://arxiv.org/abs/1905.11946) for the state-of-the-art architecture
+
+## 📸 App Screenshots
+
+
+<table>
+  <tr>
+    <td><img src="readmeImages/Screenshot_20250603_094353.jpg" alt="App Screenshot 7" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250603_094403.jpg" alt="App Screenshot 8" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250603_094414.jpg" alt="App Screenshot 9" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250603_094737.jpg" alt="App Screenshot 10" width="220" /></td>
+  </tr>
+  <tr>
+    <td><img src="readmeImages/Screenshot_20250603_094742.jpg" alt="App Screenshot 11" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250603_094808.jpg" alt="App Screenshot 12" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250603_095105.jpg" alt="App Screenshot 13" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250603_095129.jpg" alt="App Screenshot 14" width="220" /></td>
+  </tr>
+  <tr>
+    <td><img src="readmeImages/Screenshot_20250602_001128.jpg" alt="App Screenshot 1" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250602_001500.jpg" alt="App Screenshot 2" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250602_001612.jpg" alt="App Screenshot 3" width="220" /></td>
+    <td><img src="readmeImages/Screenshot_20250602_001727.jpg" alt="App Screenshot 4" width="220" /></td>
+  </tr>
+</table>
+
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -160,25 +194,6 @@ For best results when scanning fruits:
 - 📏 **Proper Distance**: Fill 60-80% of the frame
 - 🍎 **Single Fruit**: Focus on one piece at a time
 - 🔄 **Multiple Angles**: Try different orientations if needed
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **TensorFlow.js Team** for the amazing ML framework
-- **Expo Team** for the excellent development platform
-- **React Native Community** for continuous innovation
-- **EfficientNet Authors** for the state-of-the-art architecture
 
 ---
 
