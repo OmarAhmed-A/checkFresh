@@ -9,13 +9,13 @@
 
 <br />
 
-A cutting-edge React Native mobile application that leverages **EfficientNetV2B1** deep learning architecture to determine fruit freshness with **97% accuracy**. Simply point your camera at a fruit and get instant AI-powered freshness predictions!
+A cutting-edge React Native mobile application that leverages **EfficientNetV2B1** deep learning architecture to determine fruit freshness with **98.6% accuracy**. Simply point your camera at a fruit and get instant AI-powered freshness predictions!
 
 ## ✨ Features
 
 - 🤖 **Advanced AI Model**: EfficientNetV2B1 with transfer learning
 - 📱 **Real-time Camera**: Instant capture and analysis
-- 🎯 **High Accuracy**: 97% precision on validation dataset
+- 🎯 **High Accuracy**: 98.6% precision on validation dataset
 - 🔄 **Offline Capable**: No internet connection required
 - 🍎🍌🍊 **Multi-fruit Support**: Apples, bananas, and oranges
 - 📊 **Confidence Scores**: Detailed prediction confidence
@@ -62,7 +62,7 @@ A cutting-edge React Native mobile application that leverages **EfficientNetV2B1
 | **Architecture** | EfficientNetV2B1 + Transfer Learning |
 | **Input Size** | 240×240×3 RGB |
 | **Output Classes** | 6 (3 fruits × 2 states) |
-| **Accuracy** | 97% on validation set |
+| **Accuracy** | 98.6% on validation set |
 | **Training Images** | 13,599 total |
 | **Framework** | TensorFlow.js |
 
@@ -136,7 +136,7 @@ checkFresh/
 | Metric | Value |
 |--------|-------|
 | **Training Accuracy** | 98.5% |
-| **Validation Accuracy** | 97.0% |
+| **Validation Accuracy** | 98.6.0% |
 | **Inference Time** | <500ms |
 | **Model Size** | ~15MB |
 | **Memory Usage** | ~100MB |

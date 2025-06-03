@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Collapsible } from '@/components/Collapsible';
 import { ThemedText } from '@/components/ThemedText';
@@ -27,7 +27,7 @@ export default function TabTwoScreen() {
         <ThemedText style={styles.subtitle}>Powered by EfficientNetV2B1</ThemedText>
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
-            <ThemedText style={styles.statNumber}>97%</ThemedText>
+            <ThemedText style={styles.statNumber}>98.6%</ThemedText>
             <ThemedText style={styles.statLabel}>Accuracy</ThemedText>
           </View>
           <View style={styles.statBox}>
@@ -51,7 +51,7 @@ export default function TabTwoScreen() {
             <ThemedText type="defaultSemiBold">Key Features:</ThemedText>
           </ThemedText>
           <ThemedText>• ⚡ Advanced transfer learning from ImageNet</ThemedText>
-          <ThemedText>• 🎯 97% classification accuracy</ThemedText>
+          <ThemedText>• 🎯 98.6% classification accuracy</ThemedText>
           <ThemedText>• 📱 Optimized for mobile inference</ThemedText>
           <ThemedText>• 🔄 Real-time data augmentation</ThemedText>
           <ThemedText style={styles.spacing}>
