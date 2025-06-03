@@ -62,6 +62,7 @@ export interface PredictionResult {
   confidence: number;
   isFresh: boolean;
   fruitType: string;
+  rawScores?: { [className: string]: number };
 }
 
 export class ModelService {
@@ -201,10 +202,15 @@ export class ModelService {
         // Clean up input tensor before rethrowing
         imageTensor.dispose();
         throw predictionError;
-      }
-      const scores = await prediction.data();
+      }      const scores = await prediction.data();
       console.log('Raw prediction scores:', Array.from(scores));
       console.log('Scores length:', scores.length);
+      
+      // Create raw scores object
+      const rawScores: { [className: string]: number } = {};
+      this.CLASS_LABELS.forEach((label, index) => {
+        rawScores[label] = scores[index];
+      });
       
       // Find the class with highest probability
       const maxIndex = scores.indexOf(Math.max(...scores));
@@ -216,7 +222,7 @@ export class ModelService {
       console.log('Confidence:', confidence);
       
       // Parse result
-      const result = this.parseClassName(className, confidence);
+      const result = this.parseClassName(className, confidence, rawScores);
       
       // Clean up tensors immediately to prevent memory issues
       imageTensor.dispose();
@@ -233,17 +239,23 @@ export class ModelService {
         console.error('Error details:', error.message);
         console.error('Error stack:', error.stack);
       }
-      
-      // Return a mock prediction for testing
+        // Return a mock prediction for testing
       return {
         className: 'freshapples',
         confidence: 0.60,
         isFresh: true,
-        fruitType: 'apple'
-      };    }
+        fruitType: 'apple',
+        rawScores: {
+          'freshapples': 0.60,
+          'freshbanana': 0.15,
+          'freshoranges': 0.10,
+          'rottenapples': 0.08,
+          'rottenbanana': 0.04,
+          'rottenoranges': 0.03
+        }
+      };}
   }  
-
-  private parseClassName(className: string, confidence: number): PredictionResult {
+  private parseClassName(className: string, confidence: number, rawScores?: { [className: string]: number }): PredictionResult {
     const isFresh = className.startsWith('fresh');
     const fruitType = className.replace('fresh', '').replace('rotten', '');
     
@@ -251,7 +263,8 @@ export class ModelService {
       className,
       confidence: Math.round(confidence * 100) / 100,
       isFresh,
-      fruitType
+      fruitType,
+      rawScores
     };
   }
 
