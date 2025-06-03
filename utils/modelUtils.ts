@@ -1,9 +1,8 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
+import { bundleResourceIO } from '@tensorflow/tfjs-react-native';
 import { Platform } from 'react-native';
 import { imageProcessor } from './imageUtils';
-import { bundleResourceIO, decodeJpeg } from '@tensorflow/tfjs-react-native';
-import * as FileSystem from 'expo-file-system';
 
 // Import the model files
 const modelJSON = require('../assets/model/model.json');
@@ -66,7 +65,7 @@ export interface PredictionResult {
 }
 
 export class ModelService {
-  private model: tf.GraphModel | tf.LayersModel | null = null;
+  private model: tf.GraphModel | null = null;
   private isLoading = false;
 
   // Class labels matching the training data order
@@ -109,18 +108,10 @@ export class ModelService {
           } else {
             console.warn('Model JSON might be missing topology');
           }          // Load model directly without suppressing logs
-          if (modelJSON.format === 'graph-model') {
-            console.log('Loading graph model with bundleResourceIO...');
-            this.model = await tf.loadGraphModel(
-              bundleResourceIO(modelJSON, modelWeights)
-            );
-          } else {
-            console.log('Loading layers model with bundleResourceIO...');
-            this.model = await tf.loadLayersModel(
-              bundleResourceIO(modelJSON, modelWeights),
-              { strict: false }
-            );
-          }
+          console.log('Loading graph model with bundleResourceIO...');
+          this.model = await tf.loadGraphModel(
+            bundleResourceIO(modelJSON, modelWeights)
+          );
           
           console.log('Model loaded successfully using bundleResourceIO');
         } catch (bundleError) {
@@ -129,15 +120,7 @@ export class ModelService {
           // Fallback: try HTTP loading for development
           try {
             const modelUrl = 'http://localhost:8081/assets/model/model.json';
-            console.log('Trying fallback HTTP loading:', modelUrl);
-              this.model = await (async () => {
-              // Use graph model loader for HTTP fallback since model format is graph-model
-              if (modelJSON.format === 'graph-model') {
-                return await tf.loadGraphModel(modelUrl);
-              } else {
-                return await tf.loadLayersModel(modelUrl, { strict: false });
-              }
-            })();
+            console.log('Trying fallback HTTP loading:', modelUrl);            this.model = await tf.loadGraphModel(modelUrl);
             
             console.log('Model loaded with HTTP fallback');
           } catch (httpError) {
@@ -155,19 +138,15 @@ export class ModelService {
         } else if ('outputNames' in this.model) {
           console.log('Model output names:', this.model.outputNames);
         }
-        
-        // Only log layers for LayersModel
-        if ('layers' in this.model) {
-          console.log('Number of layers:', this.model.layers.length);
-        }
+          // Only log layers for LayersModel - GraphModel doesn't have layers
+        console.log('GraphModel loaded successfully - no layers property');
       }
     } catch (error) {
       console.error('All model loading attempts failed:', error);
       
-      // Final fallback: Create a mock model for testing
-      console.log('Creating mock model for testing...');
-      this.model = await this.createMockModel();
-      console.log('Mock model created - app will work with random predictions');
+      // GraphModel loading failed - no fallback available
+      console.log('GraphModel loading failed - no fallback available');
+      throw new Error('Graph model loading failed - no fallback available');
     } finally {
       this.isLoading = false;
     }
@@ -184,68 +163,35 @@ export class ModelService {
       const { tensor: imageTensor } = await imageProcessor.preprocessImage(imageUri);
       console.log('Image tensor shape:', imageTensor.shape);
       console.log('Image tensor dtype:', imageTensor.dtype);
-        // Debug: Check tensor statistics
-      // TEMPORARILY DISABLED - this might be causing stack overflow
-      // const tensorData = await imageTensor.data();
-      // const dataArray = Array.from(tensorData);
-      // const minVal = Math.min(...dataArray);
-      // const maxVal = Math.max(...dataArray);
-      // const meanVal = dataArray.reduce((a: number, b: number) => a + b, 0) / dataArray.length;
-      // console.log('Tensor stats - Min:', minVal.toFixed(1), 'Max:', maxVal.toFixed(1), 'Mean:', meanVal.toFixed(1), '(Expected: 0-255 range)');
-      
-      // Sample a few pixel values for debugging  
-      // TEMPORARILY DISABLED
-      // const samplePixels = dataArray.slice(0, 15).map(v => v.toFixed(1));
-      // console.log('First 15 pixel values:', samplePixels);
-      
-      console.log('Skipping tensor data inspection to avoid stack overflow');
-      
       console.log('About to start model prediction...');
       console.log('Model exists:', !!this.model);
-      console.log('Model type check - has executeAsync:', 'executeAsync' in this.model);// Make prediction with proper method for model type
+      console.log('Model type check - GraphModel has execute method');
       console.log('Making prediction with model...');
       console.log('Model type:', this.model.constructor.name);
-      
-      let prediction: tf.Tensor;
+        let prediction: tf.Tensor;
         try {
-        // For GraphModel, use executeAsync which is more stable
-        if ('executeAsync' in this.model) {
-          console.log('Attempting executeAsync...');
-          const result = await (this.model as any).executeAsync(imageTensor);
-          console.log('executeAsync completed');
-          prediction = Array.isArray(result) ? result[0] : result;
-        } else {
-          console.log('Attempting predict method...');
-          prediction = this.model.predict(imageTensor) as tf.Tensor;
-          console.log('predict method completed');
-        }
+        // For GraphModel, use execute method
+        console.log('Attempting execute...');
+        const result = (this.model as tf.GraphModel).execute(imageTensor);
+        console.log('execute completed');
+        prediction = Array.isArray(result) ? result[0] : result;
         
         console.log('Prediction obtained successfully');
         console.log('Prediction tensor shape:', prediction.shape);
-        console.log('Prediction tensor dtype:', prediction.dtype);
-          } catch (predictionError) {
-        console.error('Model prediction method failed at step:', 
-          'executeAsync' in this.model ? 'executeAsync' : 'predict');
+        console.log('Prediction tensor dtype:', prediction.dtype);          } catch (predictionError) {
+        console.error('Model prediction method failed at step: execute');
         console.error('Prediction error:', predictionError);
         
         // Try alternative approach - create a smaller test tensor
         console.log('Attempting fallback prediction with test tensor...');
         try {
           const testTensor = tf.randomUniform([1, 240, 240, 3], 0, 255);
-          
-          if ('executeAsync' in this.model) {
-            const testResult = await (this.model as any).executeAsync(testTensor);
-            console.log('Test executeAsync succeeded - the issue is with the input tensor');
-            testTensor.dispose();
-            if (Array.isArray(testResult)) {
-              testResult.forEach(t => t.dispose());
-            } else {
-              testResult.dispose();
-            }
+            const testResult = (this.model as tf.GraphModel).execute(testTensor);
+          console.log('Test execute succeeded - the issue is with the input tensor');
+          testTensor.dispose();
+          if (Array.isArray(testResult)) {
+            testResult.forEach(t => t.dispose());
           } else {
-            const testResult = this.model.predict(testTensor) as tf.Tensor;
-            console.log('Test predict succeeded - the issue is with the input tensor');
-            testTensor.dispose();
             testResult.dispose();
           }
         } catch (testError) {
@@ -294,23 +240,8 @@ export class ModelService {
         confidence: 0.60,
         isFresh: true,
         fruitType: 'apple'
-      };
-    }
+      };    }
   }  
-  
-  private async createMockModel(): Promise<tf.LayersModel> {
-    // Create a simple mock model for testing when the real model fails to load
-    const model = tf.sequential({
-      layers: [
-        tf.layers.flatten({ inputShape: [240, 240, 3] }),
-        tf.layers.dense({ units: 128, activation: 'relu' }),
-        tf.layers.dense({ units: 6, activation: 'softmax' }) // 6 classes
-      ]
-    });
-    
-    console.log('Mock model created with input shape: [null, 240, 240, 3]');
-    return model;
-  }
 
   private parseClassName(className: string, confidence: number): PredictionResult {
     const isFresh = className.startsWith('fresh');
